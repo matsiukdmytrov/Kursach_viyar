@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import pickle
+import sys
 from collections import UserDict
 from datetime import date, datetime
 from pathlib import Path
@@ -428,6 +429,20 @@ def parse_input(user_input: str) -> Tuple[str, List[str]]:
     return parts[0].lower(), parts[1:]
 
 
+def working_module(user_input:str,in_book:AddressBook)->None:
+    command, args = parse_input(user_input)
+    if command in EXIT_COMMANDS:
+        print("Address book saved. Good bye!")
+        sys.exit()#break
+    handler: Callable[[AddressBook, List[str]], str | None] | None = (
+        COMMANDS.get(command)
+    )
+    if handler is None:
+        print(
+            f"Unknown command '{command}'. Type 'help' to see available commands."
+        )
+    else:
+        print(handler(in_book, args))
 # ===========================================================================
 # ГОЛОВНИЙ ЦИКЛ
 # ===========================================================================
@@ -445,19 +460,8 @@ def main() -> None:
             user_input: str = input(">>> ")
             if not user_input.strip():
                 continue
-            command, args = parse_input(user_input)
-            if command in EXIT_COMMANDS:
-                print("Address book saved. Good bye!")
-                break
-            handler: Callable[[AddressBook, List[str]], str | None] | None = (
-                COMMANDS.get(command)
-            )
-            if handler is None:
-                print(
-                    f"Unknown command '{command}'. Type 'help' to see available commands."
-                )
-            else:
-                print(handler(book, args))
+
+            working_module(user_input)
     except (KeyboardInterrupt, EOFError):
         print("\nInterrupted — saving address book...")
     finally:

@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import re
 import os
 import pickle
 
@@ -17,19 +17,20 @@ from subObjects.AddressBookEntity import AddressBook
 import subObjects.AddressBookEntity as bookEntity
 
 
-# Список слів для автодоповнення
-#command_completer = WordCompleter([
-#    'start', 'stop', 'restart', 'status', 'config', 'exit'
-#], ignore_case=True)
+# ===========================================================================
+# ПАРСЕР ЛОКАЛЬНИЙ - відділяє перше слово - звернення до "блоку" ()
+# ===========================================================================
+def parse_input(user_input: str) -> Tuple[str,str]:
+    parts: List[str] = user_input.strip().split()
+    if not parts:
+        return "",""
 
-#while True:
-#    user_input = prompt('Введіть команду > ', completer=command_completer, auto_suggest=AutoSuggestFromHistory(), history=InMemoryHistory())
-#    if user_input.strip() == 'exit':
-#        break
-#    print(f"Виконано: {user_input}")
+    if len(parts) < 2:
+        return parts[0],""
+
+    return parts[0],re.sub(rf"\b{parts[0]}\b\s*", "", user_input)#user_input.replace(parts[1],"")
 
 
-#loc_address_book = subObjects.AddressBookEntity.AddressBook()
 
 def main() -> None:
     book: AddressBook = AddressBook.load()
@@ -37,9 +38,11 @@ def main() -> None:
     COMMANDS = bookEntity.COMMANDS
     EXIT_COMMANDS = bookEntity.EXIT_COMMANDS
 
-    command_completer = WordCompleter(list(COMMANDS.keys()),ignore_case=True)
-        #['start', 'stop', 'restart', 'status', 'config', 'exit'
-    #], ignore_case=True)
+    list_for_completer = ["AddressBook " + item for item in list(COMMANDS.keys())]
+    list_for_completer = list_for_completer + list(EXIT_COMMANDS)
+
+    completer = WordCompleter(list_for_completer)
+    command_completer = WordCompleter(list_for_completer,ignore_case=True)
 
     contacts_count = len(book.data)
     print("Welcome to the Assistant Bot!")
@@ -52,19 +55,28 @@ def main() -> None:
             user_input: str = prompt('Введіть команду > ', completer=command_completer, auto_suggest=AutoSuggestFromHistory(), history=InMemoryHistory())#input(">>> ")
             if not user_input.strip():
                 continue
-            command, args = bookEntity.parse_input(user_input)
-            if command in EXIT_COMMANDS:
+            rozdil, user_input_parsed = parse_input(user_input)
+
+            if rozdil in EXIT_COMMANDS:
                 print("Address book saved. Good bye!")
-                break
-            handler: Callable[[AddressBook, List[str]], str | None] | None = (
-                COMMANDS.get(command)
-            )
-            if handler is None:
-                print(
-                    f"Unknown command '{command}'. Type 'help' to see available commands."
-                )
-            else:
-                print(handler(book, args))
+                sys.exit()  # break
+            if rozdil == "AddressBook":
+                bookEntity.working_module(user_input_parsed, book)
+            #else:
+            #   break
+                #    command, args = bookEntity.parse_input(user_input_parsed)
+                #if command in EXIT_COMMANDS:
+                #    print("Address book saved. Good bye!")
+                #    break
+                #handler: Callable[[AddressBook, List[str]], str | None] | None = (
+                #    COMMANDS.get(command)
+                #)
+                #if handler is None:
+                #    print(
+                #        f"Unknown command '{command}'. Type 'help' to see available commands."
+                #    )
+                #else:
+            #    print(handler(book, args))
     except (KeyboardInterrupt, EOFError):
         print("\nInterrupted — saving address book...")
     finally:
