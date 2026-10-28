@@ -8,6 +8,7 @@
 from personal_assistant.cli import builtins
 from personal_assistant.cli.registry import Registry
 from personal_assistant.features.contacts import commands as contacts_commands
+from personal_assistant.features.currency import commands as currency_commands
 from personal_assistant.features.files import commands as files_commands
 from personal_assistant.features.notes import commands as notes_commands
 from personal_assistant.features.tasks import commands as tasks_commands
@@ -23,5 +24,6 @@ def build_registry() -> Registry:
     tasks_commands.register(registry)
     files_commands.register(registry)
     weather_commands.register(registry)
+    currency_commands.register(registry)
     # Фази 6–9: import/export, AI, зовнішні API
     return registry
